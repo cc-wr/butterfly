@@ -1,0 +1,20 @@
+election of mayor,RH,election,election,210,201,1
+competition of runners,RH,competition,competition,210,201,2
+construction of building,RH,construction,construction,210,201,3
+operation of machine,RH,operation,operation,210,201,4
+expansion of fish,RH,expansion,expansion,210,201,5
+erosion of cliff,RL,erosion,erosion,220,202,31
+corrosion of statue,RL,corrosion,corrosion,220,202,32
+diversion of roadway,RL,diversion,diversion,220,202,33
+collision of cars,RL,collision,collision,220,202,34
+eruption of volcano,RL,eruption,eruption,220,202,35
+movement of skaters,NH,movement,movement,230,203,61
+development of software,NH,development,development,230,203,62
+treatment of patient,NH,treatment,treatment,230,203,63
+enforcement of speed limit,NH,enforcement,enforcement,230,203,64
+entertainment of children,NH,entertainment,entertainment,230,203,65
+mowing of lawn,NL,mowing,mowing,240,204,91
+towing of car,NL,towing,towing,240,204,92
+containment of fire,NL,containment,containment,240,204,93
+juggling of balls,NL,juggling,juggling,240,204,94
+kayaking of river,NL,kayaking,kayaking,240,204,95

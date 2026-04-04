@@ -1,0 +1,85 @@
+## Parameter File
+## This an example parameter file for running your experiment.
+## Please enter each parameter on the line underneath.
+## Do NOT change the variable names!!  
+
+## This parameter file is to be used with the code in WordPres.m.
+## If you are tailoring the code to a specific experiment that requires 
+## additional parameters, you may add them on a new line.  Also, the order
+## of the parameters should not matter.  All parameters will be saved
+## as part of a struct in matlab called 'par'.  So for example, the line
+## 'wordDuration = .3' will set the variable in matlab 'par.wordDuration'
+## to .3.  
+
+
+## Tells WordPres what modality you are using. Can be EEG, MEG, or MRI. 
+scanner = 'EEG'
+
+## Initial trigger at beginning of experiment.
+beginTrigger = 254
+
+## Name of parameter setting:
+name = 'eeg'
+
+## Interval after audio question, before image in seconds: 
+postAudio = 1
+
+## Picture Duration in seconds:
+picDuration = 0.2
+
+## Post-picture interval, before recording in seconds:
+postPic = 3.3
+
+## Recording Duration in seconds:
+recDuration = 2
+
+## Inter-Trial Interval in seconds:
+ITI = 0.5
+
+## Text Size:
+textSize = 25
+
+## Picture Size, vertical dimension
+picSize = 300
+
+## Microphone Size, vertical dimension
+micSize = 100
+
+## Slide Text Size:
+slideTextSize = 20
+
+## Question Text Size:
+questionTextSize = 25
+
+## Timeout for instructions screens
+qDuration = 300
+
+## Self paced: if 1=press space bar between items, 0=proceeds automatically
+selfPaced = 1
+
+## -------------------------------------------------------------
+## Below this line are optional variables that override the default
+## values in WordPres.m.
+
+## Participants usually press one of two buttons in response to each question.  
+##'button1' and 'button2' specify which buttons they may press in response to the question.
+## 'button1Trigger' and 'button2Trigger' specify the triggers that
+## correspond with each button press for 'button1' and 'button2' above.
+
+button1 = KbName('f')
+button1Trigger = 251
+button2 = KbName('j')
+button2Trigger = 252
+
+## 'moveOnButton' refers to the button participants press in order to move ## on to the next item, after a text slide, and at the end of the 
+## experiment. 'moveOnTrigger' is the corresponding trigger.
+
+moveOnButton = KbName('space')
+moveOnTrigger = 250
+
+#this trigger appears at the start of all blocks that are not named
+#"intro" (block.name does not equal 'intro'), i.e. it appears at
+#the start of each experimental block, after the trigger for the
+#spacebar to move on to that block.
+
+blockTrigger = 249

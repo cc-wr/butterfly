@@ -1,0 +1,20 @@
+Butterfly Codes
+
+2X0: question types (sent with question)  QUESTION TRIGGERS
+	210: readjustment + high frequency
+	220: readjustment + low frequency
+	230: no readjustment + high frequency
+	240: no readjustment + low frequency
+
+20X: phrase type x tense, code sent with image IMAGE TRIGGERS
+	201: readjustment + high frequency
+	202: readjustment + low frequency
+	203: no readjustment + high frequency
+	204: no readjustment + low frequency
+	
+1-120: answer trigger (one code per phrase, sent with answer) ITEM TRIGGERS
+	1-30: readjustment + high frequency
+	31-60: readjustment + low frequency
+	61-90: no readjustment + high frequency
+	91-120: no readjustment + low frequency
+
