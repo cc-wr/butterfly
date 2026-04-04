@@ -1,4 +1,4 @@
-function expt = butterfly() 
+function expt = butterfly(subjID, list, paramFile)
 %%%This is the main function that controls the entire process, from reading
 %%%in input parameters to actually running the experiment
 
@@ -25,18 +25,18 @@ function expt = butterfly()
     questionText = {'Next.'};
 
     %% practice
-    practiceImageTrigger = [234;234;234;234;234;234;234;234;];
+    practiceImageTrigger = [234;234;234;234;];
     practiceJpg = {
-        'walk_dog_practice',
-        'bake_cookies_practice',
-        'mow_lawn_practice',
-        'set_table_practice'
+        'election',
+        'erosion',
+        'movement',
+        'juggling'
     };
     practiceWav = {
-        'person_prog',
-        'person_fut',
-        'person_simp',
-        'person_prog'
+        'election',
+        'erosion',
+        'movement',
+        'juggling'
         };
 
 
@@ -46,10 +46,10 @@ function expt = butterfly()
     %questionPracticeTriggers: 211 = yes; 212 = no
     questionPracticeTriggers = [239;240;239;240;];
     practiceText = {
-        'You should have said HE IS WALKING THE DOG.\nPress the space bar to continue', 
-        'You should have said SHE WILL BAKE THE COOKIES.\nPress the space bar to continue',
-        'You should have said HE MOWS THE LAWN.\nPress the space bar to continue',
-        'You should have said SHE IS SETTING THE TABLE.\nPress the space bar to continue'};
+        'The correct response was THE ELECTION OF THE MAYOR.\nPress the space bar to continue',
+        'The correct response was THE EROSION OF THE CLIFF.\nPress the space bar to continue',
+        'The correct response was THE MOVEMENT OF THE SKATERS.\nPress the space bar to continue',
+        'The correct response was THE JUGGLING OF THE BALLS.\nPress the space bar to continue'};
     
     %% intro, breaks, endings
     beginExpt = {
@@ -60,7 +60,9 @@ function expt = butterfly()
 
     %% Initialize keyboard
     KbCheck; %takes a while to load the first time
-    
+    KbName('UnifyKeyNames');
+    par.escapeKey = KbName('ESCAPE');
+
     %% Initialize PsychPortAudio
     %%% This routine loads the the PsychPortAudio sound driver for high-precision,
     %%% low-latency, multi-channel sound playback and recording 
@@ -72,9 +74,15 @@ function expt = butterfly()
     
     %% Select parameter files and enter subject and list ID.
     % [exptFileName, exptPath] = uigetfile('*.txt', 'Select experiment file');
-    [paramFileName, paramPath] = uigetfile('*.par', 'Select parameter file');
-    subjID = input('Enter subject ID: ', 's');
-    list = input('Enter list number: ', 's');
+    if nargin < 1
+        [paramFileName, paramPath] = uigetfile('*.par', 'Select parameter file');
+        subjID = input('Enter subject ID: ', 's');
+        list = input('Enter list number: ', 's');
+    else
+        [paramPath, paramName, paramExt] = fileparts(paramFile);
+        paramPath = [paramPath, '/'];
+        paramFileName = [paramName, paramExt];
+    end
     
     %% Pick Stims
 
@@ -96,8 +104,12 @@ function expt = butterfly()
     %%next few lines to facilitate naming the production recordings
     par.subjID = subjID;
     par.list = list;
-    
-    
+    par.recordingPath = strcat(paramPath, 'recordings/');
+    if ~exist(par.recordingPath, 'dir')
+        mkdir(par.recordingPath);
+    end
+
+
     %% Create log file, first test that it doesn't already exist
     fExist = fopen(par.logFileName, 'r');
     
@@ -131,10 +143,28 @@ function expt = butterfly()
 
     %% Configure the data acquisition device
     clear device
+    par.demoMode = true;
+    ports = serialportlist("available");
+    for p = 1:length(ports)
+        try
+            device = serialport(ports(p),115200,"Timeout",1);
+            device.flush()
+            write(device,"_c1","char")
+            query_return = read(device,5,"char");
+            if length(query_return) > 0 && query_return == "_xid0"
+                par.demoMode = false;
+                break
+            end
+        catch
+        end
+    end
+    clear device
 
-    %device_found = 0;
-    %ports = serialportlist("available");
-    
+    if par.demoMode
+        Screen('Preference', 'SkipSyncTests', 1);
+        fprintf('No XID device found. Running in demo mode.\n');
+    end
+
     par.pulsewidth = 5;
     %setPulseDuration(device, par.pulsewidth)
 
@@ -175,8 +205,10 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
      %Grab a time baseline for the entire experiment and send a trigger to log
      baseTime = GetSecs();
      tic;
-     sendTrigger(par.beginTrigger);
-     par.timing.beginTrigger(1) = toc; %send the 'toc' so that the timing gets logged    
+     if ~par.demoMode
+         sendTrigger(par.beginTrigger);
+     end
+     par.timing.beginTrigger(1) = toc; %send the 'toc' so that the timing gets logged
     
      clear device 
 
@@ -193,6 +225,7 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
 
     %% practice
     for practices = 1:length(practiceTrigger)
+        checkEscape(par);
         results = InitResults;
         results = runTrial(practiceImageTrigger(practices, 1), practiceJpg{practices}, practiceTrigger(practices,1), practiceWav{practices}, questionText, par, results, practiceOffset(practices, 1));
         WriteLogFile(results,par.logFileName);
@@ -220,6 +253,7 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
 
     %% experiment
     for trials = 1:length(questionTriggers)
+        checkEscape(par);
         results = InitResults;
         %%insert breaks at specified hardcoded positions (will run before
         %%the trials specified)
@@ -255,33 +289,42 @@ end
 
 function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavItemName, questionText, par, results, itemTriggers)
     
-    %% trial 
+    %% trial
 
-    clear device
+    % NOTE: BUTTERFLY XID code enumerates serial ports at the start of every
+    % trial. This is redundant and slow — could be done once at experiment
+    % start with the device handle passed via par.
+    % TODO: all demoMode trigger guards below should be consolidated into a
+    % single send function.
+    if ~par.demoMode
+        clear device
 
-    device_found = 0;
-    ports = serialportlist("available");
+        device_found = 0;
+        ports = serialportlist("available");
 
-    for p = 1:length(ports)
-        device = serialport(ports(p),115200,"Timeout",1);
-        %In order to identify an XID device, you need to send it "_c1", to
-        %which it will respond with "_xid" followed by a protocol value. 0 is
-        %"XID", and we will not be covering other protocols.
-        device.flush()
-        write(device,"_c1","char")
-        query_return = read(device,5,"char");
-        if length(query_return) > 0 && query_return == "_xid0"
-            device_found = 1;
-            break
+        for p = 1:length(ports)
+            device = serialport(ports(p),115200,"Timeout",1);
+            %In order to identify an XID device, you need to send it "_c1", to
+            %which it will respond with "_xid" followed by a protocol value. 0 is
+            %"XID", and we will not be covering other protocols.
+            device.flush()
+            write(device,"_c1","char")
+            query_return = read(device,5,"char");
+            if length(query_return) > 0 && query_return == "_xid0"
+                device_found = 1;
+                break
+            end
         end
-    end
 
-    if device_found == 0
-        disp("No XID device found. Exiting.")
-        return
-    end
+        if device_found == 0
+            % NOTE: silently returns mid-trial with no fallback. Should
+            % handle this more gracefully.
+            disp("No XID device found. Exiting.")
+            return
+        end
 
-    setPulseDuration(device, 5)
+        setPulseDuration(device, 5)
+    end
 
     % Prep Screen
     Screen('TextSize',par.wPtr,par.textSize);
@@ -295,7 +338,7 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     picStim = imresize(picStim, [par.picSize NaN]);
 
     %Get microphone image ready
-    micItem = strcat('microphone.png');
+    micItem = strcat('microphone.jpg');
     micPic = imread(micItem);
     micPic = imresize(micPic, [par.micSize NaN]);
 
@@ -322,11 +365,13 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
    
     % Sound onset
     wavItem = strcat('audio/',wavItemName,'.wav');
-    sentence = rot90(audioread(wavItem));       %EFL not using readWav b/c Ciaran already recorded in stereo
+    sentence = rot90(audioread(wavItem));       %EFL not using readWav b/c Ciaran already recorded in stereo; rot90 transposes column to row for PsychPortAudio
     pahandle = PsychPortAudio('Open',[],1,[],44100,1); %Last '1' indicates mono recording
     PsychPortAudio('FillBuffer', pahandle, sentence);
     PsychPortAudio('Start', pahandle);
-    write(device,sprintf("mh%c%c", questionTriggers, 0), "char"); %Turn trigger on
+    if ~par.demoMode
+        write(device,sprintf("mh%c%c", questionTriggers, 0), "char"); %Turn trigger on
+    end
     timeToLog = GetSecs;
     results = UpdateResults(results, timeToLog, wavItemName, questionTriggers);
 
@@ -341,8 +386,10 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     
     % Image presentation
     timeToLog = Screen('Flip', par.wPtr);
-    write(device,sprintf("mh%c%c", imageTriggers, 0), "char"); %Turn trigger on
-    results = UpdateResults(results, timeToLog, jpgItemName, imageTriggers); 
+    if ~par.demoMode
+        write(device,sprintf("mh%c%c", imageTriggers, 0), "char"); %Turn trigger on
+    end
+    results = UpdateResults(results, timeToLog, jpgItemName, imageTriggers);
  
     WaitSecs(par.picDuration-.017) %subtract screen refresh of 17ms to get desired ISI
 
@@ -359,11 +406,21 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     % Microphone appears, recording begins
     imTexture = Screen('MakeTexture', par.wPtr, micPic);
     Screen('DrawTexture', par.wPtr, imTexture);
-	timeToLog = Screen('Flip',par.wPtr);  
-    write(device,sprintf("mh%c%c", itemTriggers, 0), "char"); %Turn trigger on
-    results = UpdateResults(results, timeToLog, 'mic_prompt', itemTriggers); 
+	timeToLog = Screen('Flip',par.wPtr);
+    if ~par.demoMode
+        write(device,sprintf("mh%c%c", itemTriggers, 0), "char"); %Turn trigger on
+    end
+    results = UpdateResults(results, timeToLog, 'mic_prompt', itemTriggers);
 
-    WaitSecs(par.recDuration-.017) %subtract screen refresh of 17ms to get desired ISI   
+    if par.demoMode
+        recStart = GetSecs;
+        while GetSecs - recStart < par.recDuration
+            checkEscape(par);
+            WaitSecs(0.05);
+        end
+    else
+        WaitSecs(par.recDuration-.017) %subtract screen refresh of 17ms to get desired ISI
+    end
     %recordblocking(recorder,par.recDuration); ALEX
 
     clear device
@@ -374,7 +431,7 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     %'/Users/cnllab/Desktop/OtherExperiments/homolosine/recordings/';
     %audioFileName = strcat(audioPath,par.subjID,'_',par.list,'_',jpgItemName,'.wav');
     %audioFile = getaudiodata(recorder);
-    %audiowrite(audioFile, 44100, audioFileName);
+    %audiowrite(audioFileName, audioFile, 44100);
     %clearvars audioFile
     %clearvars recorder
     %WaitSecs(par.picDuration); 
@@ -412,10 +469,16 @@ function [reactionTime, button, buttonTrigger, par] = GetButtonPress(buttons,but
     %% Loop that waits for a response or breaks if timeCutoff is exceeded
     while (true)
         [keyDetect,reactionTime,keyCode] = KbCheck(-1);
+        if keyCode(par.escapeKey)
+            sca;
+            error('Experiment aborted by user.');
+        end
         %is there a faster way to compare each button??  Can we do this simultaneously for all buttons??
         for i = 1:length(buttons)
             if (keyCode(buttons(i)))
-                sendTrigger(buttonTriggers(i));
+                if ~par.demoMode
+                    sendTrigger(buttonTriggers(i));
+                end
                 button = buttons(i);
                 buttonTrigger = buttonTriggers(i);
                 flag = 1;
@@ -527,6 +590,8 @@ end
 
 % Send Trigger Function - only use this outside of trials, when timing
 % doesn't particularly matter
+% NOTE: enumerates all serial ports on every call. This is redundant —
+% could reuse a persistent device handle.
 function sendTrigger(triggerCode)
     clear device
 
@@ -570,6 +635,14 @@ function setPulseDuration(device, duration)
     write(device, sprintf("mp%c%c%c%c", getByte(duration,1),...
         getByte(duration,2), getByte(duration,3),...
         getByte(duration,4)), "char")
+end
+
+function checkEscape(par)
+    [~, ~, keyCode] = KbCheck(-1);
+    if keyCode(par.escapeKey)
+        sca;
+        error('Experiment aborted by user.');
+    end
 end
 
 
