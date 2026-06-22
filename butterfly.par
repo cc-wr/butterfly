@@ -25,7 +25,7 @@ name = 'eeg'
 postAudio = 1
 
 ## Picture Duration in seconds:
-picDuration = 0.5
+picDuration = 0.2
 
 ## Post-picture interval, before recording in seconds:
 postPic = 3.3
