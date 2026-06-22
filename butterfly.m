@@ -46,14 +46,14 @@ function expt = butterfly(subjID, list, paramFile)
     %questionPracticeTriggers: 211 = yes; 212 = no
     questionPracticeTriggers = [239;240;239;240;];
     practiceText = {
-        'The correct response was THE ELECTION OF THE MAYOR.\nPress the space bar to continue',
-        'The correct response was THE EROSION OF THE CLIFF.\nPress the space bar to continue',
-        'The correct response was THE MOVEMENT OF THE SKATERS.\nPress the space bar to continue',
-        'The correct response was THE JUGGLING OF THE BALLS.\nPress the space bar to continue'};
+        'The correct response was ELECTION OF THE MAYOR.\nPress the space bar to continue',
+        'The correct response was EROSION OF THE CLIFF.\nPress the space bar to continue',
+        'The correct response was MOVEMENT OF THE SKATERS.\nPress the space bar to continue',
+        'The correct response was JUGGLING OF THE BALLS.\nPress the space bar to continue'};
     
     %% intro, breaks, endings
     beginExpt = {
-        'In this experiment, you will first hear a question, and then a picture will briefly appear.\nUse the picture to come up with the answer to the question,\nand say it silently in your head.\n\n\nWhen a red microphone appears, say the answer out loud. \n\nTry not to blink or move until you see the red microphone.\n\n\n Press the Spacebar to proceed to practice items.'};
+        'In this experiment, you will first hear a question, and then a picture will briefly appear.\n Note that you will not have the information necessary to answer the question until the image appears. \nUse the picture to come up with the answer to the question,\nand say it silently in your head.\n\n\nWhen a red microphone appears, say the answer out loud. \n\nTry not to blink or move until you see the red microphone.\n\n\n Press the Spacebar to proceed to practice items.'};
     endBreak = {'This is the end of practice.\n\nIf you have any questions, please let the experimenter know now.\n\n\n\nThere will be NO feedback provided during the test!\n\n\n\nRemember: Try not to blink or move your eyes\n until you see the red microphone appear on the screen. \n\n\n\nWhen you are ready to begin, press Spacebar to continue.'};
     pauseText = {'You may now take a break.\nPress spacebar to continue.'};
     endExpt = {'This is the end of this experiment.\n\nThank you!'};
