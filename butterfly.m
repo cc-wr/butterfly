@@ -25,31 +25,34 @@ function expt = butterfly(subjID, list, paramFile)
     questionText = {'Next.'};
 
     %% practice
-    practiceImageTrigger = [234;234;234;234;];
+    practiceImageTrigger = [234;234;234;234;234;];
     practiceJpg = {
-        'election',
-        'erosion',
-        'movement',
-        'juggling'
+        'decoration',
+        'examination',
+        'migration',
+        'dancing',
+        'folding'
     };
     practiceWav = {
-        'election',
-        'erosion',
-        'movement',
-        'juggling'
+        'decoration',
+        'examination',
+        'migration',
+        'dancing',
+        'folding'
         };
 
 
     
-    practiceTrigger = [237;237;237;237;];
-    practiceOffset = [238;238;238;238;];
+    practiceTrigger = [237;237;237;237;237;];
+    practiceOffset = [238;238;238;238;238;];
     %questionPracticeTriggers: 211 = yes; 212 = no
-    questionPracticeTriggers = [239;240;239;240;];
+    questionPracticeTriggers = [239;240;239;240;239;];
     practiceText = {
-        'The correct response was ELECTION OF THE MAYOR.\nPress the space bar to continue',
-        'The correct response was EROSION OF THE CLIFF.\nPress the space bar to continue',
-        'The correct response was MOVEMENT OF THE SKATERS.\nPress the space bar to continue',
-        'The correct response was JUGGLING OF THE BALLS.\nPress the space bar to continue'};
+        'The correct response was DECORATION OF THE CAKE.\nPress the space bar to continue',
+        'The correct response was EXAMINATION OF THE CAT.\nPress the space bar to continue',
+        'The correct response was MIGRATION OF THE BIRDS.\nPress the space bar to continue',
+        'The correct response was DANCING OF THE COUPLE.\nPress the space bar to continue',
+        'The correct response was FOLDING OF THE LAUNDRY.\nPress the space bar to continue'};
     
     %% intro, breaks, endings
     beginExpt = {
@@ -366,7 +369,7 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     % Sound onset
     wavItem = strcat('audio/',wavItemName,'.wav');
     sentence = rot90(audioread(wavItem));       %EFL not using readWav b/c Ciaran already recorded in stereo; rot90 transposes column to row for PsychPortAudio
-    pahandle = PsychPortAudio('Open',[],1,[],44100,1); %Last '1' indicates mono recording
+    pahandle = PsychPortAudio('Open',[],1,[],48000,1); %Last '1' indicates mono recording
     PsychPortAudio('FillBuffer', pahandle, sentence);
     PsychPortAudio('Start', pahandle);
     if ~par.demoMode
@@ -375,7 +378,7 @@ function results = runTrial(imageTriggers, jpgItemName, questionTriggers, wavIte
     timeToLog = GetSecs;
     results = UpdateResults(results, timeToLog, wavItemName, questionTriggers);
 
-    WaitSecs(length(sentence)/44100); %EFL note this estimate may be slightly inaccurate, doesn't include the time to execute the intervening commands above
+    WaitSecs(length(sentence)/48000); %EFL note this estimate may be slightly inaccurate, doesn't include the time to execute the intervening commands above
 %     DaqDOut(par.di,1,itemTriggers); %Turn trigger on ADD OFFSET TRIGGER
 %     DaqDOut(par.di,1,0); %Turn trigger off
     PsychPortAudio('Close', pahandle);
