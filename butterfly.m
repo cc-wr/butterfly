@@ -48,17 +48,17 @@ function expt = butterfly(subjID, list, paramFile)
     %questionPracticeTriggers: 211 = yes; 212 = no
     questionPracticeTriggers = [239;240;239;240;239;];
     practiceText = {
-        'The correct response was DECORATION OF THE CAKE.\nPress the space bar to continue',
-        'The correct response was EXAMINATION OF THE CAT.\nPress the space bar to continue',
-        'The correct response was MIGRATION OF THE BIRDS.\nPress the space bar to continue',
-        'The correct response was DANCING OF THE COUPLE.\nPress the space bar to continue',
-        'The correct response was FOLDING OF THE LAUNDRY.\nPress the space bar to continue'};
+        'The correct response was THE DECORATION OF THE CAKE.\nPress the space bar to continue',
+        'The correct response was THE EXAMINATION OF THE CAT.\nPress the space bar to continue',
+        'The correct response was THE MIGRATION OF THE BIRDS.\nPress the space bar to continue',
+        'The correct response was THE DANCING OF THE COUPLE.\nPress the space bar to continue',
+        'The correct response was THE FOLDING OF THE LAUNDRY.\nPress the space bar to continue'};
     
     %% intro, breaks, endings
     beginExpt = {
-        'In this experiment, you will first hear a question, and then a picture will briefly appear.\n Note that you will not have the information necessary to answer the question until the image appears. \nUse the picture to come up with the answer to the question,\nand say it silently in your head.\n\n\nWhen a red microphone appears, say the answer out loud. \n\nTry not to blink or move until you see the red microphone.\n\n\n Press the Spacebar to proceed to practice items.'};
-    endBreak = {'This is the end of practice.\n\nIf you have any questions, please let the experimenter know now.\n\n\n\nThere will be NO feedback provided during the test!\n\n\n\nRemember: Try not to blink or move your eyes\n until you see the red microphone appear on the screen. \n\n\n\nWhen you are ready to begin, press Spacebar to continue.'};
-    pauseText = {'You may now take a break.\nPress spacebar to continue.'};
+        'In this experiment, you will first hear a question, and then a picture will briefly appear. Note that you will not have the information necessary to answer the question until the image appears. Use the picture to come up with the answer to the question, and say it silently in your head.\n\nDuring the experiment, focus your eyes on the cross in the center of the screen when it appears. Try not to blink, or move your eyes or body. DO NOT speak until you see the RED MICROPHONE.\n\nWhen the RED MICROPHONE appears, say the answer out loud.\n\nDuring setup, you reviewed the training material for all of the items in this experiment. Unlike the other items, the practice items were included with the questions you will hear and their answers. You will now be given a binder containing training material for just the practice items, without the questions or correct answers. Please review the binder before continuing to the practice items.\n\nWhen you are done reviewing the binder, let the researcher know and they will collect the binder. Then press Spacebar to continue.'};
+    endBreak = {'This is the end of practice.\n\nThe test will contain 120 items, which are divided into five sections. There will be a break between each section.\n\nYou will now be given a binder containing the training material for the first section. Please review the binder before continuing. At each break, you will be given the binder of training material for the next section to review. Unlike the practice items, you will not receive any feedback during the test.\n\nReminder:\n            During the experiment, focus your eyes on the cross in the center of the screen when it appears. Try not to blink, or move your eyes or body. After the image appears, say the answer silently in your head. DO NOT speak until you see the RED MICROPHONE.\n\nTell the researcher if you have any questions. When you are done reviewing the binder, let the researcher know and they will collect the binder. Then press Spacebar to continue.'};
+    pauseText = {'You may now take a break.\n\nPlease review the binder for the next section before continuing. You may also rest, drink water, or use the restroom.\n\nReminder:\n            During the experiment, focus your eyes on the cross in the center of the screen when it appears. Try not to blink, or move your eyes or body. After the image appears, say the answer silently in your head. DO NOT speak until you see the RED MICROPHONE.\n\nWhen you are done reviewing the binder, let the researcher know and they will collect the binder. Then press Spacebar to continue.'};
     endExpt = {'This is the end of this experiment.\n\nThank you!'};
 
     %% Initialize keyboard
@@ -220,7 +220,7 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
 	HideCursor();
     par.black = BlackIndex(par.wPtr);
     Screen('TextSize',par.wPtr,par.textSize);
-    DrawFormattedText(par.wPtr,beginExpt{1},'center','center',WhiteIndex(par.wPtr));
+    drawBlock(par, beginExpt{1});
     Screen('DrawingFinished',par.wPtr);
     ClearButtonPress;
     Screen('Flip',par.wPtr);
@@ -247,7 +247,7 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
     
     %% end of practice
     Screen('TextSize',par.wPtr,par.textSize);
-    DrawFormattedText(par.wPtr,endBreak{1},'center','center',WhiteIndex(par.wPtr));
+    drawBlock(par, endBreak{1});
     Screen('DrawingFinished',par.wPtr);
     ClearButtonPress;
     Screen('Flip',par.wPtr);
@@ -262,7 +262,7 @@ function par = runExperiment(imageTriggers, jpgList, questionTriggers, wavList, 
         %%the trials specified)
         if trials == 25 || trials == 49  || trials == 73 || trials == 97 
             Screen('TextSize',par.wPtr,par.textSize);
-            DrawFormattedText(par.wPtr,pauseText{1},'center','center',WhiteIndex(par.wPtr));
+            drawBlock(par, pauseText{1});
             Screen('DrawingFinished',par.wPtr);
             ClearButtonPress;
             Screen('Flip',par.wPtr);
@@ -646,6 +646,65 @@ function checkEscape(par)
         sca;
         error('Experiment aborted by user.');
     end
+end
+
+function drawBlock(par, txt)
+%DRAWBLOCK  Draw a multi-line instruction block: word-wrap each sentence to a
+% target width (so the longest lines come out roughly equal length), left-align
+% every line to one shared margin, and center that block horizontally and
+% vertically. Continuation lines of a wrapped sentence are indented.
+    Screen('TextSize', par.wPtr, par.textSize);
+    [winW, ~] = Screen('WindowSize', par.wPtr);
+    wrapPx = round(winW * 0.60);            % target max line width (tune here)
+    txt = wrapText(par, txt, wrapPx, '            ');
+    lines = regexp(txt, '\\n', 'split');
+    maxW = 0;
+    for i = 1:numel(lines)
+        if isempty(lines{i}), continue; end   % blank lines have no width to measure
+        b = Screen('TextBounds', par.wPtr, lines{i});
+        maxW = max(maxW, b(3));
+    end
+    sx = round((winW - maxW) / 2);
+    if sx < 0, sx = 0; end
+    DrawFormattedText(par.wPtr, txt, sx, 'center', WhiteIndex(par.wPtr));
+end
+
+function out = wrapText(par, txt, wrapPx, indent)
+%WRAPTEXT  Greedy word-wrap each paragraph (\n-separated piece) of txt to wrapPx
+% pixels. A paragraph with NO leading whitespace gets a hanging indent (first
+% line flush, continuations indented by `indent`). A paragraph that BEGINS with
+% whitespace is block-indented: every one of its lines carries that same leading
+% whitespace. Blank lines are preserved; sub-lines rejoined with literal \n.
+    logical = regexp(txt, '\\n', 'split');
+    outLines = {};
+    for i = 1:numel(logical)
+        L = logical{i};
+        if isempty(strtrim(L))
+            outLines{end+1} = '';
+            continue;
+        end
+        lead = regexp(L, '^\s*', 'match', 'once');   % leading whitespace, if any
+        words = strsplit(strtrim(L));
+        if isempty(lead)
+            cur = words{1};                % hanging: first line flush
+            contIndent = indent;
+        else
+            cur = [lead words{1}];         % block: first line carries the lead
+            contIndent = lead;             % ...and so do continuation lines
+        end
+        for k = 2:numel(words)
+            trial = [cur ' ' words{k}];
+            b = Screen('TextBounds', par.wPtr, trial);
+            if b(3) > wrapPx
+                outLines{end+1} = cur;
+                cur = [contIndent words{k}];
+            else
+                cur = trial;
+            end
+        end
+        outLines{end+1} = cur;
+    end
+    out = strjoin(outLines, '\\n');   % literal \n, matching the rest of the pipeline
 end
 
 
